@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>LAB1</title>
+        <style>
+            td {padding:5px;}
+            button{margin: 5px;}
+        </style>
+    </head>
+    <body>
+        <h2>Прогноз погоди</h2>
+        <div>
+            <table>
+                <button id="returnBtn">Користувач</button>
+                <button id="alchBtn">alch</button>
+                <button id="pgBtn">pg</button>
+            </table>
+            <input id="ID" type="hidden"/>
+            <table>
+                <thead>
+                <tr>
+                <th>День:<br/></th>
+                <td><input id="NAME" /></td>
+
+                <th>Число:<br /></th>
+                <td><input id="DD" type="number" /></td>
+
+                <th>Місяць:<br /></th>
+                <td><input id="MM" type="number" /><td>
+
+                <th>Рік:<br /></th>
+                <td><input id="YYYY" type="number" /></td>
+
+                <th>Зранку:<br /></th>
+                <td><input id="MORNING" type="number" /></td>
+
+                <th>Удень:<br /></th>
+                <td><input id="NOON" type="number" /></td>
+
+                <th>Уночі:<br /><th>
+                <td><input id="NIGHT" type="number" /></td>
+
+                <td><button id="saveBtn">Зберегти</button></td>
+                <td><button id="resetBtn">Скинути</button></td>
+                </tr>
+                </thead>
+            </table>
+        </div>
+        <table>
+            <thead><tr><th>День</th><th>Число</th><th>Місяць</th><th>Рік</th><th>Зранку</th><th>Удень</th><th>Уночі</th><th></th></tr></thead>
+            <tbody>
+            </tbody>
+        </table>
+
+        <script>
+
+            // Отримання всіх днів
+            async function getDays() {
+
+                // надсилає запит і отримуємо відповідь
+                const response = await fetch("/days", {
+                    method: "GET",
+                    headers: { "Accept": "application/json" }
+                });
+
+                // якщо запит пройшов нормально
+                if (response.ok === true) {
+                    // отримуємо дані
+                    const days = await response.json();
+                    const rows = document.querySelector("tbody");
+                    // додаємо отримані елементи в таблицю
+                    days.forEach(day => rows.append(row(day)));
+                }
+            }
+
+            // Додавання дня
+            async function createDay(nameI, ddI, mmI, yyyyI, morningI, noonI, nightI) {
+
+                const response = await fetch("/admin/day", {
+                    method: "POST",
+                    headers: { "Accept": "application/json", "Content-Type":
+                        "application/json" },
+                    body: JSON.stringify({
+                        id: 0,
+                        name: nameI,
+                        dd: parseInt(ddI, 10),
+                        mm: parseInt(mmI, 10),
+                        yyyy: parseInt(yyyyI, 10),
+                        morning: parseInt(morningI, 10),
+                        noon: parseInt(noonI, 10),
+                        night: parseInt(nightI, 10),
+                    })
+                });
+
+                if (response.ok === true) {
+                    const day = await response.json();
+                    document.querySelector("tbody").append(row(day));
+                }
+                else {
+                    const error = await response.json();
+                    console.log(error.message);
+                }
+            }
+
+            // Зміна дня
+            async function editDay(idI, nameI, ddI, mmI, yyyyI, morningI, noonI, nightI) {
+
+                const response = await fetch("/admin/day", {
+                    method: "PUT",
+                    headers: { "Accept": "application/json", "Content-Type":
+                        "application/json" },
+                    body: JSON.stringify({
+                        id: parseInt(idI, 10),
+                        name: nameI,
+                        dd: parseInt(ddI, 10),
+                        mm: parseInt(mmI, 10),
+                        yyyy: parseInt(yyyyI, 10),
+                        morning: parseInt(morningI, 10),
+                        noon: parseInt(noonI, 10),
+                        night: parseInt(nightI, 10),
+                    })
+                });
+
+                if (response.ok === true) {
+                    const day = await response.json();
+                    document.querySelector(`tr[data-rowid='${day.id}']`).replaceWith(row(day));
+                }
+                else {
+                    const error = await response.json();
+                    console.log(error.message);
+                }
+            }
+
+            // Видалення дня
+            async function deleteDay(idI) {
+
+                const response = await fetch(`/admin/day/${idI}`, {
+                    method: "DELETE",
+                    headers: { "Accept": "application/json" }
+                });
+
+                if (response.ok === true) {
+                    const day = await response.json();
+                    document.querySelector(`tr[data-rowid='${day.id}']`).remove();
+                }
+                else {
+                    const error = await response.json();
+                    console.log(error.message);
+                }
+            }
+
+            // скидання даних форми після відправлення
+            function reset() {
+                document.getElementById("ID").value = "";
+                document.getElementById("NAME").value = "";
+                document.getElementById("DD").value = "";
+                document.getElementById("MM").value = "";
+                document.getElementById("YYYY").value = "";
+                document.getElementById("MORNING").value = "";
+                document.getElementById("NOON").value = "";
+                document.getElementById("NIGHT").value = "";
+            }
+
+            // створення рядка для таблиці
+            function row(day) {
+
+                const tr = document.createElement("tr");
+                tr.setAttribute("data-rowid", day.id);
+
+                const nameTd = document.createElement("td");
+                nameTd.append(day.date.name);
+                tr.append(nameTd);
+
+                const ddTd = document.createElement("td");
+                ddTd.append(day.date.dd);
+                tr.append(ddTd);
+
+                const mmTd = document.createElement("td");
+                mmTd.append(day.date.mm);
+                tr.append(mmTd);
+
+                const yyyyTd = document.createElement("td");
+                yyyyTd.append(day.date.yyyy);
+                tr.append(yyyyTd);
+
+                const morningTd = document.createElement("td");
+                morningTd.append(day.temperature.morning);
+                tr.append(morningTd);
+
+                const noonTd = document.createElement("td");
+                noonTd.append(day.temperature.noon);
+                tr.append(noonTd);
+
+                const nightTd = document.createElement("td");
+                nightTd.append(day.temperature.night);
+                tr.append(nightTd);
+
+                const linksTd = document.createElement("td");
+
+                const editLink = document.createElement("button");
+                editLink.append("Змінити");
+                editLink.addEventListener("click", async() => await chengeDay(day.id));
+                linksTd.append(editLink);
+
+                const removeLink = document.createElement("button");
+                removeLink.append("Видалити");
+                removeLink.addEventListener("click", async () => await deleteDay(day.id));
+
+                linksTd.append(removeLink);
+                tr.appendChild(linksTd);
+
+                return tr;
+            }
+
+            // надіслання форми для оновлення деня
+            async function chengeDay(idI) {
+                const name = document.getElementById("NAME").value;
+                const dd = document.getElementById("DD").value;
+                const mm = document.getElementById("MM").value;
+                const yyyy = document.getElementById("YYYY").value;
+                const morning = document.getElementById("MORNING").value;
+                const noon = document.getElementById("NOON").value;
+                const night = document.getElementById("NIGHT").value;
+                
+                if (idI != ""&& name != ""&& dd != ""&& mm != ""&& yyyy != ""&& morning != ""&& noon != ""&& night != "")
+                    await editDay(idI, name, dd, mm, yyyy, morning, noon, night)
+
+                reset();
+            }
+
+            // скидання значень форми
+            document.getElementById("resetBtn").addEventListener("click", () => reset());
+
+            // надсилання форми для додвання дня
+            document.getElementById("saveBtn").addEventListener("click", async () => {
+
+                const id = document.getElementById("ID").value;
+                const name = document.getElementById("NAME").value;
+                const dd = document.getElementById("DD").value;
+                const mm = document.getElementById("MM").value;
+                const yyyy = document.getElementById("YYYY").value;
+                const morning = document.getElementById("MORNING").value;
+                const noon = document.getElementById("NOON").value;
+                const night = document.getElementById("NIGHT").value;
+                
+                if (id === ""&& name != ""&& dd != ""&& mm != ""&& yyyy != ""&& morning != ""&& noon != ""&& night != "")
+                    await createDay(name, dd, mm, yyyy, morning, noon, night);
+
+                reset();
+            });
+
+            // кнопка перейти на користувача
+            document.getElementById("returnBtn").addEventListener("click", async () => {
+
+                const response = await fetch("/user", {
+                    method: "GET",
+                    headers: { "Accept": "application/json" }
+                });
+
+                if (response.redirected) {
+                    window.location.href = response.url;
+                }
+            })
+
+            // кнопка використовувати SQLite
+            document.getElementById("alchBtn").addEventListener("click", async () => {
+
+                const response = await fetch("/admin/use/alch", {
+                    method: "GET",
+                    headers: { "Accept": "application/json" }
+                });
+
+                if (response.ok) {
+                    const rows = document.querySelectorAll("tbody tr");
+                    rows.forEach(row => row.remove());
+
+                    getDays();
+                }
+            })
+
+            // кнопка використовувати PostgreSQL
+            document.getElementById("pgBtn").addEventListener("click", async () => {
+
+                const response = await fetch("/admin/use/pg", {
+                    method: "GET",
+                    headers: { "Accept": "application/json" }
+                });
+
+                if (response.ok) {
+                    const rows = document.querySelectorAll("tbody tr");
+                    rows.forEach(row => row.remove());
+
+                    getDays();
+                }
+            })
+
+            // завантаження днів
+            getDays();
+
+        </script>
+    </body>
+</html>

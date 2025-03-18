@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>LAB2</title>
+        <style>
+            td {padding:5px;}
+            button{margin: 5px;}
+        </style>
+    </head>
+    <body>
+        <h2>Прогноз погоди</h2>
+        <div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Авторизація адміна, введіть пароль:<br /></th>
+                        <td><input id="PASSW" type="number" /></td>
+                        <td><button id="confirmBtn">Підтвердити</button></td>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+        <table>
+            <thead><tr><th>День</th><th>Число</th><th>Місяць</th><th>Рік</th><th>Зранку</th><th>Удень</th><th>Уночі</th></tr></thead>
+            <tbody>
+            </tbody>
+        </table>
+
+        <script>
+
+            // Отримання всіх днів
+            async function getDays() {
+
+                // надсилає запит і отримуємо відповідь
+                const response = await fetch("/days", {
+                    method: "GET",
+                    headers: { "Accept": "application/json" }
+                });
+
+                // якщо запит пройшов нормально
+                if (response.ok === true) {
+                    // отримуємо дані
+                    const days = await response.json();
+                    const rows = document.querySelector("tbody");
+                    // додаємо отримані елементи в таблицю
+                    days.forEach(day => rows.append(row(day)));
+                }
+            }
+
+
+            // скидання даних форми після відправлення
+            function reset() {
+                document.getElementById("PASSW").value = "";
+            }
+
+            // створення рядка для таблиці
+            function row(day) {
+
+                const tr = document.createElement("tr");
+                tr.setAttribute("data-rowid", day.id);
+
+                const nameTd = document.createElement("td");
+                nameTd.append(day.date.name);
+                tr.append(nameTd);
+
+                const ddTd = document.createElement("td");
+                ddTd.append(day.date.dd);
+                tr.append(ddTd);
+
+                const mmTd = document.createElement("td");
+                mmTd.append(day.date.mm);
+                tr.append(mmTd);
+
+                const yyyyTd = document.createElement("td");
+                yyyyTd.append(day.date.yyyy);
+                tr.append(yyyyTd);
+
+                const morningTd = document.createElement("td");
+                morningTd.append(day.temperature.morning);
+                tr.append(morningTd);
+
+                const noonTd = document.createElement("td");
+                noonTd.append(day.temperature.noon);
+                tr.append(noonTd);
+
+                const nightTd = document.createElement("td");
+                nightTd.append(day.temperature.night);
+                tr.append(nightTd);
+
+                return tr;
+            }
+
+            // кнопка підтвердження паролю адміна
+            document.getElementById("confirmBtn").addEventListener("click", async () => {
+
+                const passw = document.getElementById("PASSW").value;
+
+                const response = await fetch(`/authorization/${passw}`, {
+                    method: "GET",
+                    headers: { "Accept": "application/json" }
+                });
+
+                // якщо все добре переходимо на нову сторінку
+                if (response.redirected) {
+                    window.location.href = response.url;
+                }
+
+                reset();
+            });
+
+            // завантаження днів
+            getDays();
+
+        </script>
+    </body>
+</html>
