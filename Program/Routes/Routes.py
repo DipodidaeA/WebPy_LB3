@@ -1,10 +1,10 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from Db.SQLAlchemy.Func import get_all_days, add_day, update_day, delete_day
 from DTO.DTO import DTO
-from Db.PostgreSQL.Fucn import get_all_days_pg, add_day_pg, update_day_pg, delete_day_pg
-from Db.DbMigrates import mgrate_SQLite_on_PG, mgrate_PG_on_SQLite
+from Db.MongoDB.Func import get_all_days_mo, add_day_mo, update_day_mo, delete_day_mo
 from Routes.FileMenege import save, load
+from Db.DbMigrates import mgrate_MO_on_SQLite, mgrate_SQLite_on_MO
 
 router = APIRouter()
 
@@ -42,25 +42,25 @@ def read_days():
     # для SQLite
     if active_DB == "alch":
         days = get_all_days()
-    # для PostgreSQL
-    if active_DB == "pg":
-        days = get_all_days_pg()
+    # для MongoDB
+    if active_DB == "mo":
+        days = get_all_days_mo()
 
     return days
 
 # щоб змінити БД SQLite на PostgreSQL
-@router.get("/admin/use/pg")
-def use_pg():
+@router.get("/admin/use/mo")
+def use_mo():
     # отримуємо позначку БД з файл DbState.txt
     active_DB = load()
 
-    if active_DB == "pg":
-        return JSONResponse(status_code=200, content={"Message": "DB already PG"})
+    if active_DB == "mo":
+        return JSONResponse(status_code=200, content={"Message": "DB already MO"})
     
     # міграцію даних
-    mgrate_SQLite_on_PG()
+    mgrate_SQLite_on_MO()
     # зберігаємо позначку БД у файл DbState.txt
-    save("pg")
+    save("mo")
 
     return JSONResponse(status_code=200, content={"Message": "DB chenged"})
 
@@ -72,7 +72,7 @@ def use_alch():
     if active_DB == "alch":
         return JSONResponse(status_code=200, content={"Message": "DB already ASQAlchemy"})
     
-    mgrate_PG_on_SQLite()
+    mgrate_MO_on_SQLite()
 
     save("alch")
 
@@ -85,8 +85,8 @@ def create_day(dto: DTO):
 
     if active_DB == "alch":
         day = add_day(dto)
-    if active_DB == "pg":
-        day = add_day_pg(dto)
+    if active_DB == "mo":
+        day = add_day_mo(dto)
 
     return day
 
@@ -97,8 +97,8 @@ def chenge_day(dto: DTO):
 
     if active_DB == "alch":
         day = update_day(dto)
-    if active_DB == "pg":
-        day = update_day_pg(dto)
+    if active_DB == "mo":
+        day = update_day_mo(dto)
 
     if day == None:
         return JSONResponse(status_code=404, content={"Day not found"})
@@ -107,13 +107,13 @@ def chenge_day(dto: DTO):
 
 # видалення дня
 @router.delete("/admin/day/{id}")
-def remove_day(id: int):
+def remove_day(id: str):
     active_DB = load()
 
     if active_DB == "alch":
-        day = delete_day(id)
-    if active_DB == "pg":
-        day = delete_day_pg(id)
+        day = delete_day(int(id))
+    if active_DB == "mo":
+        day = delete_day_mo(id)
 
     if day == None:
         return JSONResponse(status_code=404, content={"Day not found"})

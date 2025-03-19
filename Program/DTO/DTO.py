@@ -2,7 +2,7 @@ from fastapi import Query
 from pydantic import BaseModel
 
 class DTO(BaseModel):
-    id: int = Query(ge=0)
+    id: str
     name: str = Query(min_length=3, max_length=10)
     dd: int =  Query(ge=0, lt=32)
     mm: int = Query(ge=0, lt=13)

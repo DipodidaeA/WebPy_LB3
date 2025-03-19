@@ -1,6 +1,8 @@
 # Як взаємодіяти
 
-Встановити python, postgreSQL, fastapi, uvicorn, sqlalchemy та psycopg2
+Встановити python, fastapi, uvicorn, sqlalchemy, MongoDB Community та pymongo
+1) у консолі перейти у директорію ...\MongoDB\bin\
+2) ввести .\mongod.exe --dbpath диск:\шлях\data для запуску mongo сервера
 
 Щоб запустити сервер виконати uvicorn Main.Main:app --reload у директорії Program. Запускати треба саме з директорії Program інакше програма незнатиме де брати імпорти інших файлів.
 1) Main. — шлях до файлу 

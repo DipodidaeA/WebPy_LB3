@@ -1,84 +1,74 @@
 from Db.SQLAlchemy.Db import SessionLocal
 from Db.SQLAlchemy.Models import Day, Date, Temperature
-from Db.PostgreSQL.Db import get_conn
+from Db.SQLAlchemy.Func import add_day
+from Db.MongoDB.Db import dbmo
+from DTO.DTO import DTO
+from Db.MongoDB.Func import add_day_mo, get_all_days_mo
 
-# міграція даних з SQLite у PostgreSQL
-def mgrate_SQLite_on_PG():
-    db = SessionLocal()
-    conn = get_conn()
-    cursor = conn.cursor()
+# міграція даних з SQLite у MongoDB
+def mgrate_SQLite_on_MO():
+   db = SessionLocal()
 
-    # отримуємо всі дані SQLite
-    days = db.query(Day).all()
-    dates = {d.id: d for d in db.query(Date).all()}
-    temperatures = {t.id: t for t in db.query(Temperature).all()}
+   collection_days = dbmo["days"]
+   collection_dates = dbmo["dates"]
+   collection_temps = dbmo["temperatures"]
 
-    # видаляємо всі дані у PostgreSQL
-    cursor.execute("DELETE FROM days")
-    cursor.execute("DELETE FROM temperatures")
-    cursor.execute("DELETE FROM dates")
-    conn.commit()
+   # отримуємо всі дані SQLite
+   days = db.query(Day).all()
+   dates = {d.id: d for d in db.query(Date).all()}
+   temperatures = {t.id: t for t in db.query(Temperature).all()}
 
-    # записуємо дані з SQLite у PostgreSQL
-    for day in days:
-        date = dates.get(day.dateID)
-        temp = temperatures.get(day.temperatureID)
+   # видаляємо всі дані у MongoDB
+   collection_days.delete_many({})
+   collection_dates.delete_many({})
+   collection_temps.delete_many({})
 
-        if date and temp:
-            cursor.execute(
-                "INSERT INTO dates (id, name, dd, mm, yyyy) VALUES (%s, %s, %s, %s, %s) ON CONFLICT (id) DO NOTHING",
-                (date.id, date.name, date.dd, date.mm, date.yyyy)
-            )
+   # записуємо дані з SQLite у MongoDB
+   for day in days:
+      date = dates.get(day.dateID)
+      temp = temperatures.get(day.temperatureID)
 
-            cursor.execute(
-                "INSERT INTO temperatures (id, morning, noon, night) VALUES (%s, %s, %s, %s) ON CONFLICT (id) DO NOTHING",
-                (temp.id, temp.morning, temp.noon, temp.night)
-            )
+      dto = DTO(
+         id = "0",
+         name = date.name,
+         dd = date.dd,
+         mm = date.mm,
+         yyyy = date.yyyy,
+         morning = temp.morning,
+         noon = temp.noon,
+         night = temp.night
+      )
 
-            cursor.execute(
-                "INSERT INTO days (id, dateID, temperatureID) VALUES (%s, %s, %s) ON CONFLICT (id) DO NOTHING",
-                (day.id, day.dateID, day.temperatureID)
-            )
+      add_day_mo(dto)
 
-    conn.commit()
+   return
 
-    cursor.close()
-    conn.close()
+# міграція даних з MongoDB у SQLite
+def mgrate_MO_on_SQLite():
+   db = SessionLocal()
 
-    return
+   # отримуємо дані з MongoDb
+   days = get_all_days_mo()
 
-# міграція даних з PostgreSQL у SQLite
-def mgrate_PG_on_SQLite():
-    db = SessionLocal()
-    conn = get_conn()
-    cursor = conn.cursor()
+   # видаляємо дані з SQLite
+   db.query(Date).delete()
+   db.query(Temperature).delete()
+   db.query(Day).delete()
+   db.commit()
 
-    # отримуємо дані з PostgreSQL
-    cursor.execute("SELECT id, name, dd, mm, yyyy FROM dates")
-    dates = cursor.fetchall()
+   # записуємо дані з MongoDB у SQLite
+   for day in days:
+      dto = DTO(
+         id = "0",
+         name = day["date"]["name"],
+         dd = day["date"]["dd"],
+         mm = day["date"]["mm"],
+         yyyy = day["date"]["yyyy"],
+         morning = day["temperature"]["morning"],
+         noon = day["temperature"]["noon"],
+         night = day["temperature"]["night"]
+      )
 
-    cursor.execute("SELECT id, morning, noon, night FROM temperatures")
-    temperatures = cursor.fetchall()
+      add_day(dto)
 
-    cursor.execute("SELECT id, dateID, temperatureID FROM days")
-    days = cursor.fetchall()
-
-    # видаляємо дані з SQLite
-    db.query(Date).delete()
-    db.query(Temperature).delete()
-    db.query(Day).delete()
-    db.commit()
-
-    # записуємо дані з PostgreSQL у SQLite
-    for date in dates:
-        db.add(Date(id=date[0], name=date[1], dd=date[2], mm=date[3], yyyy=date[4]))
-
-    for temp in temperatures:
-        db.add(Temperature(id=temp[0], morning=temp[1], noon=temp[2], night=temp[3]))
-
-    for day in days:
-        db.add(Day(id=day[0], dateID=day[1], temperatureID=day[2]))
-
-    db.commit()
-
-    return
+   return

@@ -14,7 +14,7 @@
             <table>
                 <button id="returnBtn">Користувач</button>
                 <button id="alchBtn">alch</button>
-                <button id="pgBtn">pg</button>
+                <button id="moBtn">mo</button>
             </table>
             <input id="ID" type="hidden"/>
             <table>
@@ -82,7 +82,7 @@
                     headers: { "Accept": "application/json", "Content-Type":
                         "application/json" },
                     body: JSON.stringify({
-                        id: 0,
+                        id: "0",
                         name: nameI,
                         dd: parseInt(ddI, 10),
                         mm: parseInt(mmI, 10),
@@ -111,7 +111,7 @@
                     headers: { "Accept": "application/json", "Content-Type":
                         "application/json" },
                     body: JSON.stringify({
-                        id: parseInt(idI, 10),
+                        id: idI,
                         name: nameI,
                         dd: parseInt(ddI, 10),
                         mm: parseInt(mmI, 10),
@@ -127,6 +127,7 @@
                     document.querySelector(`tr[data-rowid='${day.id}']`).replaceWith(row(day));
                 }
                 else {
+                    console.log(typeof idI);
                     const error = await response.json();
                     console.log(error.message);
                 }
@@ -280,9 +281,9 @@
             })
 
             // кнопка використовувати PostgreSQL
-            document.getElementById("pgBtn").addEventListener("click", async () => {
+            document.getElementById("moBtn").addEventListener("click", async () => {
 
-                const response = await fetch("/admin/use/pg", {
+                const response = await fetch("/admin/use/mo", {
                     method: "GET",
                     headers: { "Accept": "application/json" }
                 });

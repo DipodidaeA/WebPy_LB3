@@ -9,11 +9,16 @@ db = SessionLocal()
 def get_day_by_id(id: int):
     day = db.query(Day).filter_by(id=id).options(joinedload(Day.date), joinedload(Day.temperature)).first()
 
+    day.id = str(day.id)
+
     return day
 
 # отримання всіх днів
 def get_all_days():
     days = db.query(Day).options(joinedload(Day.date), joinedload(Day.temperature)).all()
+
+    for day in days:
+        day.id = str(day.id)
 
     return days
 
@@ -37,7 +42,7 @@ def add_day(dto: DTO):
 
 # оновлення дня
 def update_day(dto: DTO):
-    day = db.query(Day).filter_by(id=dto.id).options(joinedload(Day.date), joinedload(Day.temperature)).first()
+    day = db.query(Day).filter_by(id=int(dto.id)).options(joinedload(Day.date), joinedload(Day.temperature)).first()
 
     if day == None:
         return None
@@ -56,7 +61,7 @@ def update_day(dto: DTO):
     db.refresh(day.temperature)
     db.refresh(day)
 
-    return get_day_by_id(day.id)
+    return get_day_by_id(int(dto.id))
 
 
 # видалення дня
@@ -73,5 +78,7 @@ def delete_day(id: int):
     db.delete(date)
     db.delete(temperature)
     db.commit()
+
+    day.id = str(day.id)
 
     return day
